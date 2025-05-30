@@ -2,10 +2,13 @@ from dynamo_handler import (
     add_task,
     list_tasks,
     mark_task_completed,
-    edit_task_name,
+    edit_task,
     delete_task,
     list_completed_tasks,
-    list_pending_tasks
+    list_pending_tasks,
+    list_overdue_tasks,
+    delete_completed_tasks,
+
 )
 
 def menu():
@@ -18,7 +21,9 @@ def menu():
         print("5. Delete Task") 
         print("6. Show Completed Tasks")    # 👈 NEW
         print("7. Show Pending Tasks")      # 👈 NEW
-        print("8. Exit")
+        print("8. View overdue tasks")
+        print("9. Delete all completed tasks")
+        print("15. Exit")
 
 
         choice = input("Choose an option: ")
@@ -26,9 +31,12 @@ def menu():
         if choice == "1":
             task = input("Enter task: ")
             due_date = input("Enter due date (YYYY-MM-DD) [optional]: ")
-            due_date = due_date if due_date.strip() else None
-            add_task(task, due_date)
-            print("Task added successfully.")
+            priority = input("Enter priority (High/Medium/Low) [default: Medium]: ").capitalize()
+
+            if priority not in ["High", "Medium", "Low"]:
+                priority = "Medium"
+
+            add_task(task, due_date, priority)
         elif choice == "2":
             list_tasks()
         elif choice == "3":
@@ -36,11 +44,12 @@ def menu():
             mark_task_completed(task_id)
             print("Task marked as completed.")
         elif choice == "4":
-            task_id = input("Enter Task ID to edit: ")
-            new_name = input("Enter new task name: ")
-            new_due = input("Enter new due date (YYYY-MM-DD) [optional]: ")
+            task_id = input("Enter task ID to edit: ")
+            new_name = input("Enter new task name (leave blank to keep unchanged): ")
+            new_due = input("Enter new due date (YYYY-MM-DD) [leave blank to keep unchanged]: ")
+            new_name = new_name if new_name.strip() else None
             new_due = new_due if new_due.strip() else None
-            edit_task_name(task_id, new_name, new_due)
+            edit_task(task_id, new_name, new_due)
             print("Task updated successfully.")
         elif choice == "5":
             task_id = input("Enter task ID to delete: ")
@@ -51,6 +60,10 @@ def menu():
         elif choice == "7":
             list_pending_tasks()
         elif choice == "8":
+            list_overdue_tasks()
+        elif choice == "9":
+            delete_completed_tasks()
+        elif choice == "15":
             break
 
         else:
