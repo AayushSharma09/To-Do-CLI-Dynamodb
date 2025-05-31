@@ -1,14 +1,16 @@
 import uuid
+import csv
 from datetime import datetime
 from config import table
 
-def add_task(task_name, due_date=None, priority="Medium"):
+def add_task(task_name, due_date=None, priority="Medium", tags=None):
     task_id = str(uuid.uuid4())[:8]
     item = {
         "task_id": task_id,
         "task_name": task_name,
         "completed": False,
-        "priority": priority
+        "priority": priority,
+        "tags": tags or []
     }
 
     if due_date:
@@ -55,6 +57,9 @@ def list_tasks():
             due = "No Due Date"
         priority = task.get("priority", "Medium")
         print(f"{task_id} - {task_name} [{status}] - Due: {due}{overdue} - Priority: {priority}")
+        tags = ", ".join(task.get("tags", []))
+        if tags:
+            print(f"   Tags: {tags}")
 
 def edit_task(task_id, new_name=None, new_due_date=None):
     update_expression = []
@@ -183,3 +188,66 @@ def delete_completed_tasks():
     else:
         print("No completed tasks to delete.")
 
+def export_tasks_to_csv(filename="tasks_export.csv"):
+    response = table.scan()
+    tasks = response.get("Items", [])
+
+    if not tasks:
+        print("No tasks to export.")
+        return
+
+    with open(filename, mode="w", newline="") as csv_file:
+        fieldnames = ["task_id", "task_name", "completed", "due_date", "priority"]
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        writer.writeheader()
+
+        for task in tasks:
+            writer.writerow({
+                "task_id": task.get("task_id", ""),
+                "task_name": task.get("task_name", ""),
+                "completed": task.get("completed", False),
+                "due_date": task.get("due_date", ""),
+                "priority": task.get("priority", "Medium")
+            })
+
+    print(f"Tasks exported successfully to {filename}.")
+
+def filter_tasks_by_priority(priority_level):
+    response = table.scan()
+    tasks = response.get("Items", [])
+
+    filtered = [task for task in tasks if task.get("priority", "Medium").lower() == priority_level.lower()]
+
+    if not filtered:
+        print(f"No {priority_level} priority tasks found.")
+        return
+
+    print(f"\n{priority_level.upper()} PRIORITY TASKS:")
+    for task in filtered:
+        task_id = task["task_id"]
+        task_name = task["task_name"]
+        status = "✅" if task.get("completed") else "⏳"
+        due = task.get("due_date", "N/A")
+        print(f"{task_id} - {task_name} [{status}] - Due: {due}")
+
+def filter_tasks_by_tag(tag_name):
+    response = table.scan()
+    tasks = response.get("Items", [])
+
+    filtered = [task for task in tasks if tag_name.lower() in [t.lower() for t in task.get("tags", [])]]
+
+    if not filtered:
+        print(f"No tasks found with tag '{tag_name}'.")
+        return
+
+    print(f"\nTASKS WITH TAG: {tag_name}")
+    for task in filtered:
+        task_id = task["task_id"]
+        task_name = task["task_name"]
+        status = "✅" if task.get("completed") else "⏳"
+        due = task.get("due_date", "N/A")
+        priority = task.get("priority", "Medium")
+        print(f"{task_id} - {task_name} [{status}] - Due: {due} - Priority: {priority}")
+        tags = ", ".join(task.get("tags", []))
+        if tags:
+            print(f"   Tags: {tags}")

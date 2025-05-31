@@ -1,0 +1,8 @@
+task_id,task_name,completed,due_date,priority
+bc22f2cb-4717-462e-b6c9-a7c2eb54323d,Buy eggs,True,,Medium
+23083744-68f8-40e3-8819-bbb40c05ea64,Test Overdue,False,2024-12-01,Medium
+3e2274a7-79c9-4824-af59-f097430b0549,Recharge Phone,False,,Medium
+08c3f0db-130c-413b-a566-f8191b19ee76,House Rent,False,2025-06-02,Medium
+f12ad044-eae5-4849-a195-74425e702e1b,Recharge Wifi,False,2025-04-11,Medium
+f60b9e6d-ba8d-4ee9-9a69-a301b9099c9e,Water Bill,False,,Medium
+f7cc943d-e716-4b58-a7cd-a5caf9f42dc1,Electricity Bill,True,,Medium

@@ -8,7 +8,9 @@ from dynamo_handler import (
     list_pending_tasks,
     list_overdue_tasks,
     delete_completed_tasks,
-
+    export_tasks_to_csv,
+    filter_tasks_by_priority,
+    filter_tasks_by_tag,
 )
 
 def menu():
@@ -23,6 +25,9 @@ def menu():
         print("7. Show Pending Tasks")      # 👈 NEW
         print("8. View overdue tasks")
         print("9. Delete all completed tasks")
+        print("10. Export tasks to CSV")
+        print("11. View tasks by priority")
+        print("12. View tasks by tag")
         print("15. Exit")
 
 
@@ -32,11 +37,12 @@ def menu():
             task = input("Enter task: ")
             due_date = input("Enter due date (YYYY-MM-DD) [optional]: ")
             priority = input("Enter priority (High/Medium/Low) [default: Medium]: ").capitalize()
-
             if priority not in ["High", "Medium", "Low"]:
                 priority = "Medium"
+            tags_input = input("Enter tags (comma-separated) [optional]: ")
+            tags = [tag.strip() for tag in tags_input.split(",") if tag.strip()]
+            add_task(task, due_date, priority, tags)
 
-            add_task(task, due_date, priority)
         elif choice == "2":
             list_tasks()
         elif choice == "3":
@@ -63,6 +69,23 @@ def menu():
             list_overdue_tasks()
         elif choice == "9":
             delete_completed_tasks()
+        elif choice == "10":
+            filename = input("Enter filename [default: tasks_export.csv]: ").strip()
+            if not filename:
+                filename = "tasks_export.csv"
+            export_tasks_to_csv(filename)  
+        elif choice == "11":
+            priority = input("Enter priority to filter by (High/Medium/Low): ").capitalize()
+            if priority not in ["High", "Medium", "Low"]:
+                print("Invalid priority.")
+            else:
+                filter_tasks_by_priority(priority)
+        elif choice == "12":
+            tag = input("Enter tag to filter by: ").strip()
+            if not tag:
+                print("Tag cannot be empty.")
+            else:
+                filter_tasks_by_tag(tag)
         elif choice == "15":
             break
 
