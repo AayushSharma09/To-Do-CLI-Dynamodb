@@ -1,16 +1,18 @@
 import uuid
 import csv
-from datetime import datetime
+from datetime import datetime, date
 from config import table
+from datetime import timedelta
 
-def add_task(task_name, due_date=None, priority="Medium", tags=None):
-    task_id = str(uuid.uuid4())[:8]
+def add_task(task_name, due_date=None, priority="Medium", tags=None, recurrence="none"):
+    task_id = str(uuid.uuid4())
     item = {
         "task_id": task_id,
         "task_name": task_name,
         "completed": False,
         "priority": priority,
-        "tags": tags or []
+        "tags": tags or [],
+        "recurrence": recurrence,
     }
 
     if due_date:
@@ -20,13 +22,45 @@ def add_task(task_name, due_date=None, priority="Medium", tags=None):
     print("Task added successfully.")
 
 def mark_task_completed(task_id):
-    response = table.update_item(
+    response = table.get_item(Key={"task_id": task_id})
+    task = response.get("Item")
+
+    if not task:
+        print("Task not found.")
+        return
+
+    table.update_item(
         Key={"task_id": task_id},
-        UpdateExpression="set completed = :val",
-        ExpressionAttributeValues={":val": True},
-        ReturnValues="UPDATED_NEW"
+        UpdateExpression="SET completed = :val",
+        ExpressionAttributeValues={":val": True}
     )
-    return response
+    print("Task marked as completed.")
+
+    recurrence = task.get("recurrence", "none")
+    if recurrence != "none":
+        new_due_date = task.get("due_date")
+        if new_due_date:
+            try:
+                current_due = datetime.strptime(new_due_date, "%Y-%m-%d")
+                if recurrence == "daily":
+                    new_due = current_due + timedelta(days=1)
+                elif recurrence == "weekly":
+                    new_due = current_due + timedelta(weeks=1)
+                elif recurrence == "monthly":
+                    new_due = current_due.replace(month=current_due.month % 12 + 1)
+                new_due_str = new_due.strftime("%Y-%m-%d")
+            except:
+                new_due_str = None
+        else:
+            new_due_str = None
+
+        add_task(
+            task_name=task["task_name"],
+            due_date=new_due_str,
+            priority=task.get("priority", "Medium"),
+            tags=task.get("tags", []),
+            recurrence=recurrence
+        )
     
 def list_tasks():
     response = table.scan()
@@ -249,5 +283,43 @@ def filter_tasks_by_tag(tag_name):
         priority = task.get("priority", "Medium")
         print(f"{task_id} - {task_name} [{status}] - Due: {due} - Priority: {priority}")
         tags = ", ".join(task.get("tags", []))
+        if tags:
+            print(f"   Tags: {tags}")
+
+def list_tasks_sorted_by_due_date():
+    response = table.scan()
+    tasks = response.get("Items", [])
+
+    def parse_due_date(task):
+        due_str = task.get("due_date")
+        try:
+            return datetime.strptime(due_str, "%Y-%m-%d") if due_str else datetime.max
+        except:
+            return datetime.max
+
+    sorted_tasks = sorted(tasks, key=parse_due_date)
+
+    if not sorted_tasks:
+        print("No tasks found.")
+        return
+
+    print("\nTASKS SORTED BY DUE DATE:")
+    for task in sorted_tasks:
+        task_id = task["task_id"]
+        task_name = task["task_name"]
+        status = "✅" if task.get("completed") else "⏳"
+        due = task.get("due_date", "N/A")
+        priority = task.get("priority", "Medium")
+        tags = ", ".join(task.get("tags", []))
+        overdue = ""
+        if due != "N/A" and not task.get("completed"):
+            try:
+                due_date = datetime.strptime(due, "%Y-%m-%d").date()
+                if due_date < date.today():
+                    overdue = " (Overdue)"
+            except ValueError:
+                pass
+
+        print(f"{task_id} - {task_name} [{status}] - Due: {due}{overdue} - Priority: {priority}")
         if tags:
             print(f"   Tags: {tags}")

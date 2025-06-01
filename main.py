@@ -11,6 +11,7 @@ from dynamo_handler import (
     export_tasks_to_csv,
     filter_tasks_by_priority,
     filter_tasks_by_tag,
+    list_tasks_sorted_by_due_date,
 )
 
 def menu():
@@ -28,6 +29,7 @@ def menu():
         print("10. Export tasks to CSV")
         print("11. View tasks by priority")
         print("12. View tasks by tag")
+        print("13. View tasks sorted by due date")
         print("15. Exit")
 
 
@@ -41,7 +43,11 @@ def menu():
                 priority = "Medium"
             tags_input = input("Enter tags (comma-separated) [optional]: ")
             tags = [tag.strip() for tag in tags_input.split(",") if tag.strip()]
-            add_task(task, due_date, priority, tags)
+            recurrence = input("Enter recurrence (none/daily/weekly/monthly): ").strip().lower()
+            if recurrence not in ["none", "daily", "weekly", "monthly"]:
+                recurrence = "none"
+            add_task(task, due_date, priority, tags, recurrence)
+
 
         elif choice == "2":
             list_tasks()
@@ -86,6 +92,9 @@ def menu():
                 print("Tag cannot be empty.")
             else:
                 filter_tasks_by_tag(tag)
+        elif choice == "13":
+            list_tasks_sorted_by_due_date()
+
         elif choice == "15":
             break
 
