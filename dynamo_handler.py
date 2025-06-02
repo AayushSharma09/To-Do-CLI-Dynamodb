@@ -323,3 +323,49 @@ def list_tasks_sorted_by_due_date():
         print(f"{task_id} - {task_name} [{status}] - Due: {due}{overdue} - Priority: {priority}")
         if tags:
             print(f"   Tags: {tags}")
+
+def search_tasks(keyword):
+    keyword = keyword.lower()
+    response = table.scan()
+    tasks = response.get("Items", [])
+
+    found = False
+    for task in tasks:
+        name = task.get("task_name", "").lower()
+        tags = [tag.lower() for tag in task.get("tags", [])]
+
+        if keyword in name or keyword in tags:
+            status = "✅" if task.get("completed") else "⏳"
+            due_date = task.get("due_date", "N/A")
+            print(f"{task['task_id']} - {task['task_name']} [{status}] - Due: {due_date}")
+            found = True
+
+    if not found:
+        print("No matching tasks found.")
+
+def daily_summary():
+    response = table.scan()
+    tasks = response.get("Items", [])
+
+    total_tasks = len(tasks)
+    completed = sum(1 for task in tasks if task.get("completed"))
+    due_today = 0
+    overdue = 0
+
+    for task in tasks:
+        due_date = task.get("due_date")
+        if due_date:
+            try:
+                task_date = date.fromisoformat(due_date)
+                if task_date == date.today():
+                    due_today += 1
+                elif task_date < date.today() and not task.get("completed"):
+                    overdue += 1
+            except ValueError:
+                continue
+
+    print("\n📊 DAILY SUMMARY")
+    print(f"Total tasks: {total_tasks}")
+    print(f"✅ Completed: {completed}")
+    print(f"📅 Due today: {due_today}")
+    print(f"⚠️ Overdue: {overdue}\n")

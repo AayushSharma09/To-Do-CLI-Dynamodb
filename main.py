@@ -12,9 +12,13 @@ from dynamo_handler import (
     filter_tasks_by_priority,
     filter_tasks_by_tag,
     list_tasks_sorted_by_due_date,
+    search_tasks,
+    daily_summary,
 )
 
 def menu():
+    daily_summary()
+    
     while True:
         print("\nTO-DO LIST MENU")
         print("1. Add Task")
@@ -30,6 +34,7 @@ def menu():
         print("11. View tasks by priority")
         print("12. View tasks by tag")
         print("13. View tasks sorted by due date")
+        print("14. Search tasks by keyword")
         print("15. Exit")
 
 
@@ -47,8 +52,6 @@ def menu():
             if recurrence not in ["none", "daily", "weekly", "monthly"]:
                 recurrence = "none"
             add_task(task, due_date, priority, tags, recurrence)
-
-
         elif choice == "2":
             list_tasks()
         elif choice == "3":
@@ -94,7 +97,9 @@ def menu():
                 filter_tasks_by_tag(tag)
         elif choice == "13":
             list_tasks_sorted_by_due_date()
-
+        elif choice == "14":
+            keyword = input("Enter keyword to search: ").strip()
+            search_tasks(keyword)
         elif choice == "15":
             break
 
