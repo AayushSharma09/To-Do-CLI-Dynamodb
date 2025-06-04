@@ -4,22 +4,25 @@ from datetime import datetime, date
 from config import table
 from datetime import timedelta
 
-def add_task(task_name, due_date=None, priority="Medium", tags=None, recurrence="none"):
+def add_task(task_name, due_date=None, priority=None, recurrence="none", tags=None):
     task_id = str(uuid.uuid4())
+    created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     item = {
         "task_id": task_id,
         "task_name": task_name,
+        "created_at": created_at,
         "completed": False,
-        "priority": priority,
-        "tags": tags or [],
         "recurrence": recurrence,
+        "priority": priority or "normal",
     }
-
     if due_date:
         item["due_date"] = due_date
-
+    if tags:
+        tag_list = [tag.strip().lower() for tag in tags.split(",")]
+        item["tags"] = tag_list
     table.put_item(Item=item)
     print("Task added successfully.")
+
 
 def mark_task_completed(task_id):
     response = table.get_item(Key={"task_id": task_id})
@@ -264,27 +267,27 @@ def filter_tasks_by_priority(priority_level):
         due = task.get("due_date", "N/A")
         print(f"{task_id} - {task_name} [{status}] - Due: {due}")
 
-def filter_tasks_by_tag(tag_name):
+def filter_tasks_by_tags(tag_input):
+    input_tags = set(tag.strip().lower() for tag in tag_input.split(","))
     response = table.scan()
     tasks = response.get("Items", [])
+    filtered = []
 
-    filtered = [task for task in tasks if tag_name.lower() in [t.lower() for t in task.get("tags", [])]]
+    for task in tasks:
+        task_tags = set(task.get("tags", []))
+        if input_tags & task_tags:  # intersection means at least one tag matches
+            filtered.append(task)
 
     if not filtered:
-        print(f"No tasks found with tag '{tag_name}'.")
+        print("No tasks match the specified tags.")
         return
 
-    print(f"\nTASKS WITH TAG: {tag_name}")
+    print("\nTasks matching tags:")
     for task in filtered:
-        task_id = task["task_id"]
-        task_name = task["task_name"]
         status = "✅" if task.get("completed") else "⏳"
-        due = task.get("due_date", "N/A")
-        priority = task.get("priority", "Medium")
-        print(f"{task_id} - {task_name} [{status}] - Due: {due} - Priority: {priority}")
         tags = ", ".join(task.get("tags", []))
-        if tags:
-            print(f"   Tags: {tags}")
+        print(f"{task['task_id']} - {task['task_name']} [{status}] Tags: {tags}")
+
 
 def list_tasks_sorted_by_due_date():
     response = table.scan()
@@ -369,3 +372,20 @@ def daily_summary():
     print(f"✅ Completed: {completed}")
     print(f"📅 Due today: {due_today}")
     print(f"⚠️ Overdue: {overdue}\n")
+
+def list_tasks_due_today():
+    today = date.today().isoformat()
+    response = table.scan()
+    tasks = response.get('Items', [])
+    due_today = []
+
+    for task in tasks:
+        if task.get("due_date") == today and not task.get("completed", False):
+            due_today.append(task)
+
+    if due_today:
+        print("\nTasks Due Today:")
+        for task in due_today:
+            print(f"{task['task_id']} - {task['task_name']} [⏰]")
+    else:
+        print("\nNo tasks due today.")

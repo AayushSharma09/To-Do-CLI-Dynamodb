@@ -10,15 +10,16 @@ from dynamo_handler import (
     delete_completed_tasks,
     export_tasks_to_csv,
     filter_tasks_by_priority,
-    filter_tasks_by_tag,
+    filter_tasks_by_tags,
     list_tasks_sorted_by_due_date,
     search_tasks,
     daily_summary,
+    list_tasks_due_today,
 )
 
 def menu():
     daily_summary()
-    
+
     while True:
         print("\nTO-DO LIST MENU")
         print("1. Add Task")
@@ -35,7 +36,9 @@ def menu():
         print("12. View tasks by tag")
         print("13. View tasks sorted by due date")
         print("14. Search tasks by keyword")
-        print("15. Exit")
+        print("15. Filter Tasks by Tags")
+        print("16. View tasks due today")
+        print("20. Exit")
 
 
         choice = input("Choose an option: ")
@@ -101,6 +104,12 @@ def menu():
             keyword = input("Enter keyword to search: ").strip()
             search_tasks(keyword)
         elif choice == "15":
+            tag_input = input("Enter tag(s) to filter by (comma-separated): ")
+            filter_tasks_by_tags(tag_input)
+        elif choice == "16":
+            list_tasks_due_today()
+
+        elif choice == "20":
             break
 
         else:
